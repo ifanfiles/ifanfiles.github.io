@@ -1,26 +1,20 @@
-// Inisialisasi map di lokasi Jawa Tengah
+// Inisialisasi map (awal zoom bebas saja, nanti akan diset otomatis)
 var map = L.map('map').setView([-7.4, 110], 8);
 
-// Basemap OSM (wajib ada agar Windy overlay terlihat)
+// Tambah basemap OSM
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-// Tambahkan overlay dari Windy (contoh radar)
-var radarLayer = L.tileLayer(
-  'https://tilecache.rainviewer.com/v2/radar/256/{z}/{x}/{y}/2/1_1.png',
-  { attribution: 'Radar data © RainViewer.com' }
-).addTo(map);
-
-// Tambahkan batas wilayah dari GeoJSON
+// Load batas wilayah dari GeoJSON
 fetch('batas_wilayah.geojson')
   .then(response => response.json())
   .then(data => {
-    L.geoJSON(data, {
+    var batas = L.geoJSON(data, {
       style: { color: "red", weight: 2, fillOpacity: 0 }
     }).addTo(map);
-    
-// Zoom otomatis sesuai batas wilayah
+
+    // ⬇️ Zoom otomatis sesuai batas wilayah
     map.fitBounds(batas.getBounds());
   });
 
