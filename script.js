@@ -1,23 +1,12 @@
-// Inisialisasi map (awal zoom bebas saja, nanti akan diset otomatis)
-var map = L.map('map').setView([-7.4, 110], 8);
+// Inisialisasi peta
+var map = L.map('map').setView([-7.7, 110.3], 9);
 
 // Tambah basemap OSM
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-// Load batas wilayah dari GeoJSON
-fetch('batas_wilayah.geojson')
-  .then(response => response.json())
-  .then(data => {
-    var batas = L.geoJSON(data, {
-      style: { color: "red", weight: 2, fillOpacity: 0 }
-    }).addTo(map);
-
-    // ⬇️ Zoom otomatis sesuai batas wilayah
-    map.fitBounds(batas.getBounds());
-
-    // --- Daftar kode adm2 BMKG untuk kabupaten/kota yang kamu pilih ---
+// Daftar kode adm2 BMKG untuk kabupaten yang dipilih
 let kodeKabupaten = {
   "Gunungkidul": "3471",
   "Kota Yogyakarta": "3472",
@@ -35,7 +24,7 @@ let kodeKabupaten = {
   "Kota Magelang": "3371"
 };
 
-// --- Fungsi ambil data BMKG berdasarkan kode adm2 ---
+// Fungsi ambil prakiraan cuaca BMKG
 async function getCuacaKabupaten(namaKab, kode) {
   try {
     let url = `https://api.bmkg.go.id/publik/prakiraan-cuaca?adm2=${kode}`;
@@ -44,33 +33,41 @@ async function getCuacaKabupaten(namaKab, kode) {
 
     if (data && data.data && data.data[0] && data.data[0].cuaca) {
       let cuaca = data.data[0].cuaca[0]; // ambil data prakiraan pertama
-      return {
-        kabupaten: namaKab,
-        waktu: cuaca.local_datetime,
-        kondisi: cuaca.weather_desc,
-        suhu: cuaca.t,
-        kelembaban: cuaca.hu
-      };
+      return `
+        <b>${namaKab}</b><br>
+        Waktu: ${cuaca.local_datetime}<br>
+        Cuaca: ${cuaca.weather_desc}<br>
+        Suhu: ${cuaca.t} °C<br>
+        Kelembaban: ${cuaca.hu} %
+      `;
     } else {
-      return { kabupaten: namaKab, error: "Data tidak tersedia" };
+      return `<b>${namaKab}</b><br>Data tidak tersedia`;
     }
   } catch (e) {
-    return { kabupaten: namaKab, error: "Gagal ambil data" };
+    return `<b>${namaKab}</b><br>Gagal ambil data`;
   }
 }
 
-// --- Loop semua kabupaten dan tampilkan di console ---
-async function tampilkanSemua() {
-  for (let [nama, kode] of Object.entries(kodeKabupaten)) {
-    let hasil = await getCuacaKabupaten(nama, kode);
-    console.log(hasil);
-  }
-}
+// Load batas wilayah dari GeoJSON (pastikan file sesuai)
+fetch('batas_kabupaten.geojson')
+  .then(response => response.json())
+  .then(data => {
+    var batas = L.geoJSON(data, {
+      style: { color: "blue", weight: 2, fillOpacity: 0.1 },
+      onEachFeature: function (feature, layer) {
+        let namaKab = feature.properties.FIRST_KA_1; // ganti sesuai field nama di GeoJSON
 
-tampilkanSemua();
+        if (kodeKabupaten[namaKab]) {
+          layer.on('click', async function () {
+            let popupContent = await getCuacaKabupaten(namaKab, kodeKabupaten[namaKab]);
+            layer.bindPopup(popupContent).openPopup();
+          });
+        } else {
+          layer.bindPopup(`<b>${namaKab}</b><br>Kode BMKG tidak tersedia`);
+        }
+      }
+    }).addTo(map);
 
+    // Auto zoom ke semua kabupaten
+    map.fitBounds(batas.getBounds());
   });
-
-
-
-
