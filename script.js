@@ -7,9 +7,9 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 // Tambahkan overlay dari Windy (contoh radar)
-var windyRadar = L.tileLayer(
-  'https://tilecache.rainviewer.com/v2/radar/{z}/{x}/{y}/1/1_1.png', 
-  { attribution: 'Radar data © Windy.com' }
+var radarLayer = L.tileLayer(
+  'https://tilecache.rainviewer.com/v2/radar/256/{z}/{x}/{y}/2/1_1.png',
+  { attribution: 'Radar data © RainViewer.com' }
 ).addTo(map);
 
 // Tambahkan batas wilayah dari GeoJSON
@@ -20,3 +20,4 @@ fetch('batas_wilayah.geojson')
       style: { color: "red", weight: 2, fillOpacity: 0 }
     }).addTo(map);
   });
+
