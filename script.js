@@ -19,5 +19,9 @@ fetch('batas_wilayah.geojson')
     L.geoJSON(data, {
       style: { color: "red", weight: 2, fillOpacity: 0 }
     }).addTo(map);
+    
+// Zoom otomatis sesuai batas wilayah
+    map.fitBounds(batas.getBounds());
   });
+
 
