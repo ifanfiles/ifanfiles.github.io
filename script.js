@@ -49,7 +49,7 @@ async function getCuacaKabupaten(namaKab, kode) {
 }
 
 // Load batas wilayah dari GeoJSON (pastikan file sesuai)
-fetch('batas_kabupaten.geojson')
+fetch('batas_wilayah.geojson')
   .then(response => response.json())
   .then(data => {
     var batas = L.geoJSON(data, {
@@ -71,3 +71,4 @@ fetch('batas_kabupaten.geojson')
     // Auto zoom ke semua kabupaten
     map.fitBounds(batas.getBounds());
   });
+
