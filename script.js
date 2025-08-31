@@ -6,47 +6,20 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-// Daftar kode adm2 BMKG untuk kabupaten yang dipilih
-let kodeKabupaten = {
-  "Gunungkidul": "3471",
-  "Kota Yogyakarta": "3472",
-  "Bantul": "3473",
-  "Sleman": "3474",
-  "Kulon Progo": "3475",
-  "Purworejo": "3306",
-  "Cilacap": "3301",
-  "Banyumas": "3302",
-  "Purbalingga": "3303",
-  "Banjarnegara": "3304",
-  "Wonosobo": "3305",
-  "Temanggung": "3307",
-  "Magelang": "3308",
-  "Kota Magelang": "3371"
-};
 
-// Fungsi ambil prakiraan cuaca BMKG
-async function getCuacaKabupaten(namaKab, kode) {
-  try {
-    let url = `https://api.bmkg.go.id/publik/prakiraan-cuaca?adm2=${kode}`;
-    let res = await fetch(url);
-    let data = await res.json();
 
-    if (data && data.data && data.data[0] && data.data[0].cuaca) {
-      let cuaca = data.data[0].cuaca[0]; // ambil data prakiraan pertama
-      return `
-        <b>${namaKab}</b><br>
-        Waktu: ${cuaca.local_datetime}<br>
-        Cuaca: ${cuaca.weather_desc}<br>
-        Suhu: ${cuaca.t} °C<br>
-        Kelembaban: ${cuaca.hu} %
-      `;
-    } else {
-      return `<b>${namaKab}</b><br>Data tidak tersedia`;
-    }
-  } catch (e) {
-    return `<b>${namaKab}</b><br>Gagal ambil data`;
-  }
-}
+// Contoh inisialisasi peta Windy setelah libBoot.js dimuat
+    const options = {
+      key: 'LXN1gdZeVuvvqnZ1cpnalWapvZgdkZrM', // ganti dengan API key Windy Anda
+      lat: -7.685,
+      lon: 109.903,
+      zoom: 10,
+    };
+
+    // tunggu sampai windyBoot siap
+    windyInit(options, function(windyAPI) {
+      console.log("Windy siap!", windyAPI);
+    });
 
 // Load batas wilayah dari GeoJSON (pastikan file sesuai)
 fetch('batas_wilayah.geojson')
@@ -71,4 +44,5 @@ fetch('batas_wilayah.geojson')
     // Auto zoom ke semua kabupaten
     map.fitBounds(batas.getBounds());
   });
+
 
