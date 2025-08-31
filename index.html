@@ -117,7 +117,9 @@
         }).addTo(map);
 
         // Zoom otomatis ke batas wilayah
-        map.fitBounds(batasLayer.getBounds());
+        map.fitBounds(batasLayer.getBounds(),{
+  maxZoom: 10  // batas zoom maksimal setelah fitBounds
+});
       });
   </script>
 </body>
