@@ -2,52 +2,141 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Peta Cuaca Windy API</title>
-
-  <!-- CSS Leaflet (wajib untuk peta dasar) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css" />
-
+  <title>RainViewer Radar Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-    }
-    #windy {
+    #map {
+      height: 100vh;
       width: 100%;
-      height: 100vh; /* fullscreen */
+    }
+    .control {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: white;
+      padding: 5px 10px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      z-index: 1000;
+    }
+    .control button {
+      margin: 2px;
+      padding: 4px 8px;
+      border: none;
+      background: #1976d2;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .control button:hover {
+      background: #125a9c;
+    }
+    .timestamp {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: monospace;
+      z-index: 1000;
     }
   </style>
 </head>
 <body>
-  <!-- Kontainer peta -->
-  <div id="windy"></div>
+  <div id="map"></div>
+  <div class="control">
+    <button id="prev">⏪ Prev</button>
+    <button id="play">▶ Play</button>
+    <button id="stop">⏹ Stop</button>
+    <button id="next">⏩ Next</button>
+  </div>
+  <div class="timestamp" id="timestamp">Loading...</div>
 
-  <!-- Script Leaflet -->
-  <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"></script>
-
-  <!-- Script Windy API -->
-  <script src="https://api.windy.com/assets/map-forecast/libBoot.js"></script>
-
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    // Konfigurasi peta
-    const options = {
-      key: 'LXN1gdZeVuvvqnZ1cpnalWapvZgdkZrM',  // Ganti dengan API key Windy kamu
-      lat: -7.685,               // Latitude awal
-      lon: 109.903,              // Longitude awal
-      zoom: 7,                   // Level zoom
-      overlay: 'radar',          // Layer default: radar, wind, temp, clouds, dll
-    };
+    const map = L.map('map').setView([-7.685, 109.903], 6); // Jawa Tengah
 
-    // Inisialisasi Windy
-    windyInit(options, function (windyAPI) {
-      const { map, store } = windyAPI;
+    // Basemap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
 
-      console.log("Windy siap!");
-      
-      // Contoh: ganti overlay secara programatik
-      store.set('overlay', 'wind'); // tampilkan kecepatan angin
-    });
+    let radarLayers = [];
+    let currentFrame = 0;
+    let playInterval;
+    let frames = [];
+    const tsElement = document.getElementById("timestamp");
+
+    // Fungsi ubah UTC → WIB
+    function formatTime(utc) {
+      const date = new Date(utc * 1000); // dari detik → ms
+      date.setHours(date.getUTCHours() + 7); // konversi ke WIB
+      return date.toLocaleString("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    // Fungsi tampilkan frame
+    function showFrame(i) {
+      radarLayers.forEach((layer, idx) => {
+        layer.setOpacity(idx === i ? 0.6 : 0);
+      });
+      tsElement.innerText = formatTime(frames[i].time);
+    }
+
+    // Ambil data RainViewer
+    fetch("https://api.rainviewer.com/public/weather-maps.json")
+      .then(res => res.json())
+      .then(data => {
+        const host = data.host;
+        frames = data.radar.past;
+
+        // Buat semua frame jadi tileLayer
+        frames.forEach(frame => {
+          const url = `${host}${frame.path}/256/{z}/{x}/{y}/2/1_1.png`;
+          const layer = L.tileLayer(url, { opacity: 0, attribution: "RainViewer.com" });
+          radarLayers.push(layer);
+          layer.addTo(map);
+        });
+
+        // Tampilkan frame awal
+        showFrame(currentFrame);
+
+        // Tombol Play
+        document.getElementById("play").addEventListener("click", () => {
+          clearInterval(playInterval);
+          playInterval = setInterval(() => {
+            currentFrame = (currentFrame + 1) % radarLayers.length;
+            showFrame(currentFrame);
+          }, 800);
+        });
+
+        // Tombol Stop
+        document.getElementById("stop").addEventListener("click", () => {
+          clearInterval(playInterval);
+        });
+
+        // Tombol Next
+        document.getElementById("next").addEventListener("click", () => {
+          clearInterval(playInterval);
+          currentFrame = (currentFrame + 1) % radarLayers.length;
+          showFrame(currentFrame);
+        });
+
+        // Tombol Prev
+        document.getElementById("prev").addEventListener("click", () => {
+          clearInterval(playInterval);
+          currentFrame = (currentFrame - 1 + radarLayers.length) % radarLayers.length;
+          showFrame(currentFrame);
+        });
+      });
   </script>
 </body>
 </html>
