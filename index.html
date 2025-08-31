@@ -2,54 +2,39 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>RainViewer Radar + Batas Wilayah + Kontrol Animasi</title>
+  <title>RainViewer Radar + Batas Wilayah</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     #map { height: 100vh; width: 100%; }
-    .legend {
-      background: white;
-      padding: 8px 12px;
-      border-radius: 6px;
-      line-height: 18px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    }
-    .legend img {
-      width: 200px;
-      display: block;
-      margin-top: 4px;
-    }
-    .controls {
-      background: white;
-      padding: 8px;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      text-align: center;
-    }
-    .controls button {
-      margin: 2px;
-      padding: 4px 8px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      background: #1976d2;
-      color: white;
-    }
-    .controls button:hover {
-      background: #1565c0;
+    .control {
+      position: absolute;
+      top: 10px; left: 10px;
+      background: white; padding: 5px 10px;
+      border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      z-index: 1000;
     }
     .timestamp {
-      margin-top: 6px;
-      font-size: 14px;
-      font-weight: bold;
+      position: absolute;
+      bottom: 10px; left: 10px;
+      background: rgba(0,0,0,0.6); color: white;
+      padding: 4px 8px; border-radius: 6px;
+      font-size: 14px; font-family: monospace;
+      z-index: 1000;
     }
   </style>
 </head>
 <body>
   <div id="map"></div>
+  <div class="control">
+    <button id="prev">⏪ Prev</button>
+    <button id="play">▶ Play</button>
+    <button id="stop">⏹ Stop</button>
+    <button id="next">⏩ Next</button>
+  </div>
+  <div class="timestamp" id="timestamp">Loading...</div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    // Inisialisasi peta
     const map = L.map('map').setView([-7.685, 109.903], 6);
 
     // Basemap
@@ -57,100 +42,82 @@
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // ==== Tambahkan batas wilayah dari GeoJSON ====
-    fetch("batas_wilayah.geojson")
-      .then(res => res.json())
-      .then(data => {
-        const geoLayer = L.geoJSON(data, {
-          style: { color: "red", weight: 2 }
-        }).addTo(map);
-        map.fitBounds(geoLayer.getBounds());
-      });
+    let radarLayers = [];
+    let currentFrame = 0;
+    let playInterval;
+    let frames = [];
+    const tsElement = document.getElementById("timestamp");
 
-    // ==== RainViewer ====
+    function formatTime(utc) {
+      const date = new Date(utc * 1000);
+      date.setHours(date.getUTCHours() + 7); // WIB
+      return date.toLocaleString("id-ID", {
+        day: "2-digit", month: "short", year: "numeric",
+        hour: "2-digit", minute: "2-digit"
+      });
+    }
+
+    // Ambil data RainViewer
     fetch("https://api.rainviewer.com/public/weather-maps.json")
       .then(res => res.json())
       .then(data => {
         const host = data.host;
-        const frames = data.radar.past.concat(data.radar.nowcast);
-        let frameIndex = frames.length - 1;
-        let radarLayer;
-        let isPlaying = false;
-        let playInterval;
+        frames = data.radar.past;
 
-        function showFrame(index) {
-          const frame = frames[index];
+        frames.forEach(frame => {
           const url = `${host}${frame.path}/256/{z}/{x}/{y}/2/1_1.png`;
-
-          if (radarLayer) map.removeLayer(radarLayer);
-
-          radarLayer = L.tileLayer(url, { opacity: 0.6 });
-          radarLayer.addTo(map);
-
-          // update timestamp di kontrol
-          document.getElementById("timestamp").innerText =
-            new Date(frame.time * 1000).toLocaleString();
-        }
-
-        function play() {
-          if (isPlaying) return;
-          isPlaying = true;
-          playInterval = setInterval(() => {
-            frameIndex = (frameIndex + 1) % frames.length;
-            showFrame(frameIndex);
-          }, 1000);
-        }
-
-        function pause() {
-          isPlaying = false;
-          clearInterval(playInterval);
-        }
-
-        function nextFrame() {
-          frameIndex = (frameIndex + 1) % frames.length;
-          showFrame(frameIndex);
-        }
-
-        function prevFrame() {
-          frameIndex = (frameIndex - 1 + frames.length) % frames.length;
-          showFrame(frameIndex);
-        }
-
-        // Kontrol animasi
-        const controls = L.control({ position: "topright" });
-        controls.onAdd = function () {
-          const div = L.DomUtil.create("div", "controls");
-          div.innerHTML = `
-            <button id="playBtn">▶ Play</button>
-            <button id="pauseBtn">⏸ Pause</button>
-            <button id="prevBtn">⏮ Prev</button>
-            <button id="nextBtn">⏭ Next</button>
-            <div id="timestamp" class="timestamp"></div>
-          `;
-          return div;
-        };
-        controls.addTo(map);
-
-        // Event listener tombol
-        document.addEventListener("click", (e) => {
-          if (e.target && e.target.id === "playBtn") play();
-          if (e.target && e.target.id === "pauseBtn") pause();
-          if (e.target && e.target.id === "nextBtn") nextFrame();
-          if (e.target && e.target.id === "prevBtn") prevFrame();
+          const layer = L.tileLayer(url, { opacity: 0, attribution: "RainViewer.com" });
+          radarLayers.push(layer);
+          layer.addTo(map);
         });
 
-        // === Legend otomatis RainViewer ===
-        const legend = L.control({ position: "bottomright" });
-        legend.onAdd = function () {
-          const div = L.DomUtil.create("div", "legend");
-          div.innerHTML = "<b>Legenda Curah Hujan</b><br>" +
-            "<img src='" + host + data.radar.color + "' alt='Legend'>";
-          return div;
-        };
-        legend.addTo(map);
+        radarLayers[0].setOpacity(0.6);
+        tsElement.innerText = formatTime(frames[0].time);
 
-        // tampilkan frame awal
-        showFrame(frameIndex);
+        function showFrame(i) {
+          radarLayers.forEach((layer, idx) => {
+            layer.setOpacity(idx === i ? 0.6 : 0);
+          });
+          tsElement.innerText = formatTime(frames[i].time);
+        }
+
+        document.getElementById("play").addEventListener("click", () => {
+          clearInterval(playInterval);
+          playInterval = setInterval(() => {
+            currentFrame = (currentFrame + 1) % radarLayers.length;
+            showFrame(currentFrame);
+          }, 800);
+        });
+
+        document.getElementById("stop").addEventListener("click", () => {
+          clearInterval(playInterval);
+        });
+
+        document.getElementById("prev").addEventListener("click", () => {
+          currentFrame = (currentFrame - 1 + radarLayers.length) % radarLayers.length;
+          showFrame(currentFrame);
+        });
+
+        document.getElementById("next").addEventListener("click", () => {
+          currentFrame = (currentFrame + 1) % radarLayers.length;
+          showFrame(currentFrame);
+        });
+      });
+
+    // === Tambahkan batas wilayah dari GeoJSON ===
+    fetch("batas_wilayah.geojson")  // file harus disimpan di folder yang sama dengan index.html
+      .then(res => res.json())
+      .then(data => {
+        const batasLayer = L.geoJSON(data, {
+          style: {
+            color: "red",
+            weight: 2,
+            fillOpacity: 0
+          }
+        }).addTo(map);
+
+        // Zoom otomatis ke batas wilayah
+        map.fitBounds(batasLayer.getBounds());
       });
   </script>
 </body>
