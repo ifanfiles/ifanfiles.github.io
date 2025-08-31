@@ -2,24 +2,77 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>RainViewer Radar + Batas Wilayah</title>
+  <title>RainViewer Radar Map</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     #map { height: 100vh; width: 100%; }
     .control {
       position: absolute;
-      top: 10px; left: 10px;
-      background: white; padding: 5px 10px;
-      border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      top: 10px;
+      left: 10px;
+      background: white;
+      padding: 5px 10px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
       z-index: 1000;
     }
+    .control button {
+      margin: 2px;
+      padding: 4px 8px;
+      border: none;
+      background: #1976d2;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .control button:hover { background: #125a9c; }
     .timestamp {
       position: absolute;
-      bottom: 10px; left: 10px;
-      background: rgba(0,0,0,0.6); color: white;
-      padding: 4px 8px; border-radius: 6px;
-      font-size: 14px; font-family: monospace;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: monospace;
       z-index: 1000;
+    }
+    .slider-container {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      z-index: 1000;
+      text-align: center;
+    }
+    .slider-container input { width: 100%; }
+
+    /* Legend styling */
+    .legend {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: white;
+      padding: 8px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      font-size: 12px;
+      line-height: 1.4;
+      z-index: 1000;
+    }
+    .legend div {
+      display: flex;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+    .legend span {
+      display: inline-block;
+      width: 18px;
+      height: 12px;
+      margin-right: 6px;
     }
   </style>
 </head>
@@ -32,10 +85,24 @@
     <button id="next">⏩ Next</button>
   </div>
   <div class="timestamp" id="timestamp">Loading...</div>
+  <div class="slider-container">
+    <input type="range" id="frameSlider" min="0" value="0" step="1">
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <strong>Intensitas Hujan</strong>
+    <div><span style="background:#00bfff"></span> Ringan</div>
+    <div><span style="background:#00ff00"></span> Sedang</div>
+    <div><span style="background:#ffff00"></span> Lebat</div>
+    <div><span style="background:#ff8000"></span> Sangat Lebat</div>
+    <div><span style="background:#ff0000"></span> Ekstrem</div>
+    <div><span style="background:#a000a0"></span> Sangat Ekstrem</div>
+  </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    const map = L.map('map').setView([-7.685, 109.903], 6);
+    const map = L.map('map').setView([-7.685, 109.903], 6); // Jawa Tengah
 
     // Basemap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -47,6 +114,7 @@
     let playInterval;
     let frames = [];
     const tsElement = document.getElementById("timestamp");
+    const slider = document.getElementById("frameSlider");
 
     function formatTime(utc) {
       const date = new Date(utc * 1000);
@@ -57,12 +125,23 @@
       });
     }
 
-    // Ambil data RainViewer
+    function showFrame(i) {
+      radarLayers.forEach((layer, idx) => {
+        layer.setOpacity(idx === i ? 0.6 : 0);
+      });
+      tsElement.innerText = formatTime(frames[i].time) + (frames[i].forecast ? " (Forecast)" : "");
+      slider.value = i;
+    }
+
     fetch("https://api.rainviewer.com/public/weather-maps.json")
       .then(res => res.json())
       .then(data => {
         const host = data.host;
-        frames = data.radar.past;
+
+        // Gabungkan past + forecast
+        frames = [...data.radar.past, ...data.radar.nowcast];
+
+        slider.max = frames.length - 1;
 
         frames.forEach(frame => {
           const url = `${host}${frame.path}/256/{z}/{x}/{y}/2/1_1.png`;
@@ -71,15 +150,7 @@
           layer.addTo(map);
         });
 
-        radarLayers[0].setOpacity(0.6);
-        tsElement.innerText = formatTime(frames[0].time);
-
-        function showFrame(i) {
-          radarLayers.forEach((layer, idx) => {
-            layer.setOpacity(idx === i ? 0.6 : 0);
-          });
-          tsElement.innerText = formatTime(frames[i].time);
-        }
+        showFrame(currentFrame);
 
         document.getElementById("play").addEventListener("click", () => {
           clearInterval(playInterval);
@@ -89,37 +160,25 @@
           }, 800);
         });
 
-        document.getElementById("stop").addEventListener("click", () => {
+        document.getElementById("stop").addEventListener("click", () => clearInterval(playInterval));
+
+        document.getElementById("next").addEventListener("click", () => {
           clearInterval(playInterval);
+          currentFrame = (currentFrame + 1) % radarLayers.length;
+          showFrame(currentFrame);
         });
 
         document.getElementById("prev").addEventListener("click", () => {
+          clearInterval(playInterval);
           currentFrame = (currentFrame - 1 + radarLayers.length) % radarLayers.length;
           showFrame(currentFrame);
         });
 
-        document.getElementById("next").addEventListener("click", () => {
-          currentFrame = (currentFrame + 1) % radarLayers.length;
+        slider.addEventListener("input", (e) => {
+          clearInterval(playInterval);
+          currentFrame = parseInt(e.target.value);
           showFrame(currentFrame);
         });
-      });
-
-    // === Tambahkan batas wilayah dari GeoJSON ===
-    fetch("batas_wilayah.geojson")  // file harus disimpan di folder yang sama dengan index.html
-      .then(res => res.json())
-      .then(data => {
-        const batasLayer = L.geoJSON(data, {
-          style: {
-            color: "red",
-            weight: 2,
-            fillOpacity: 0
-          }
-        }).addTo(map);
-
-        // Zoom otomatis ke batas wilayah
-        map.fitBounds(batasLayer.getBounds(),{
-  maxZoom: 10  // batas zoom maksimal setelah fitBounds
-});
       });
   </script>
 </body>
