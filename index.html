@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peta Cuaca Windy API</title>
+
+  <!-- CSS Leaflet (wajib untuk peta dasar) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css" />
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    #windy {
+      width: 100%;
+      height: 100vh; /* fullscreen */
+    }
+  </style>
+</head>
+<body>
+  <!-- Kontainer peta -->
+  <div id="windy"></div>
+
+  <!-- Script Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"></script>
+
+  <!-- Script Windy API -->
+  <script src="https://api.windy.com/assets/map-forecast/libBoot.js"></script>
+
+  <script>
+    // Konfigurasi peta
+    const options = {
+      key: 'YOUR_API_KEY_HERE',  // Ganti dengan API key Windy kamu
+      lat: -7.685,               // Latitude awal
+      lon: 109.903,              // Longitude awal
+      zoom: 7,                   // Level zoom
+      overlay: 'radar',          // Layer default: radar, wind, temp, clouds, dll
+    };
+
+    // Inisialisasi Windy
+    windyInit(options, function (windyAPI) {
+      const { map, store } = windyAPI;
+
+      console.log("Windy siap!");
+      
+      // Contoh: ganti overlay secara programatik
+      store.set('overlay', 'wind'); // tampilkan kecepatan angin
+    });
+  </script>
+</body>
+</html>
