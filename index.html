@@ -127,7 +127,7 @@
 
     function showFrame(i) {
       radarLayers.forEach((layer, idx) => {
-        layer.setOpacity(idx === i ? 1 : 0);
+        layer.setOpacity(idx === i ? 0.7 : 0);
       });
       tsElement.innerText = formatTime(frames[i].time) + (frames[i].forecast ? " (Forecast)" : "");
       slider.value = i;
@@ -145,7 +145,7 @@
 
         frames.forEach(frame => {
           const url = `${host}${frame.path}/256/{z}/{x}/{y}/2/1_1.png`;
-          const layer = L.tileLayer(url, { opacity: 1, attribution: "RainViewer.com" });
+          const layer = L.tileLayer(url, { opacity: 0, attribution: "RainViewer.com" });
           radarLayers.push(layer);
           layer.addTo(map);
         });
