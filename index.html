@@ -201,7 +201,7 @@
             fillOpacity: 0
           },
           onEachFeature: (feature, layer) => {
-            const nama = feature.properties.NAMOBJ || feature.properties.NAME || "Tanpa Nama";
+            const nama = feature.properties.FIRST_KA_1 || feature.properties.NAME || "Tanpa Nama";
 
             // Tooltip
             layer.bindTooltip(nama, { permanent: false, direction: "center" });
