@@ -135,25 +135,7 @@
       tsElement.innerText = formatTime(frames[i].time) + (frames[i].forecast ? " (Forecast)" : "");
       slider.value = i;
     }
-// Load batas wilayah dari GeoJSON (pastikan file sesuai)
-fetch('batas_wilayah.geojson')
-  .then(response => response.json())
-  .then(data => {
-    var batas = L.geoJSON(data, {
-      style: { color: "blue", weight: 2, fillOpacity: 0.1 },
-      onEachFeature: function (feature, layer) {
-        let namaKab = feature.properties.FIRST_KA_1; // ganti sesuai field nama di GeoJSON
 
-        if (kodeKabupaten[namaKab]) {
-          layer.on('click', async function () {
-            let popupContent = await getCuacaKabupaten(namaKab, kodeKabupaten[namaKab]);
-            layer.bindPopup(popupContent).openPopup();
-          });
-        } else {
-          layer.bindPopup(`<b>${namaKab}</b><br>Kode BMKG tidak tersedia`);
-        }
-      }
-    }).addTo(map);
   //=====================================================================
     fetch("https://api.rainviewer.com/public/weather-maps.json")
       .then(res => res.json())
@@ -202,6 +184,15 @@ fetch('batas_wilayah.geojson')
           showFrame(currentFrame);
         });
       });
+// Load batas wilayah dari GeoJSON (pastikan file sesuai)
+fetch('batas_wilayah.geojson')
+  .then(response => response.json())
+  .then(data => {
+    var batas = L.geoJSON(data, {
+      style: { color: "blue", weight: 2, fillOpacity: 0.1 },
+      }
+    }
+    }).addTo(map);
   </script>
 </body>
 </html>
