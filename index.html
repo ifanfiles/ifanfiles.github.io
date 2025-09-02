@@ -196,9 +196,12 @@
       .then(data => {
         const geojsonLayer = L.geoJSON(data, {
           style: {
-            color: "#00ff00",
-            weight: 1,
-            fillOpacity: 0
+            color: "#ff0000",     // warna garis (merah)
+            weight: 2,            // ketebalan garis
+            opacity: 0.8,         // transparansi garis
+            dashArray: "5, 5",    // garis putus-putus (panjang 5px, spasi 5px)
+            fillColor: "#00ff00", // isi polygon (hijau)
+            fillOpacity: 0.1      // transparansi isi
           },
           onEachFeature: (feature, layer) => {
             const nama = feature.properties.FIRST_KA_1 || feature.properties.NAME || "Tanpa Nama";
