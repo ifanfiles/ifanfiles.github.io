@@ -200,7 +200,7 @@
             weight: 2,            // ketebalan garis
             opacity: 0.8,         // transparansi garis
             dashArray: "3, 5",    // garis putus-putus (panjang 5px, spasi 5px)
-            fillColor: "#00ff00", // isi polygon (hijau)
+            //fillColor: "#00ff00", // isi polygon (hijau)
             fillOpacity: 0      // transparansi isi
           },
           onEachFeature: (feature, layer) => {
@@ -212,7 +212,7 @@
             // Hover highlight
             layer.on({
               mouseover: (e) => {
-                e.target.setStyle({ color: "red", weight: 2, fillOpacity: 0.2 });
+                e.target.setStyle({ color: "white", weight: 2, fillOpacity: 0.1 });
               },
               mouseout: (e) => {
                 geojsonLayer.resetStyle(e.target);
