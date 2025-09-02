@@ -184,15 +184,6 @@
           showFrame(currentFrame);
         });
       });
-// Load batas wilayah dari GeoJSON (pastikan file sesuai)
-fetch('batas_wilayah.geojson')
-  .then(response => response.json())
-  .then(data => {
-    var batas = L.geoJSON(data, {
-      style: { color: "blue", weight: 2, fillOpacity: 0.1 },
-      }
-    }
-    }).addTo(map);
   </script>
 </body>
 </html>
