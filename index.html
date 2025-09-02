@@ -1,93 +1,229 @@
-<script>
-  const map = L.map('map').setView([-7.685, 109.903], 6); // Jawa Tengah
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>RainViewer Radar Map + Batas Wilayah</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map { height: 100vh; width: 100%; }
 
-  // Basemap satelit
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles © Esri'
-  }).addTo(map);
+    .control {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: white;
+      padding: 5px 10px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      z-index: 1000;
+    }
+    .control button {
+      margin: 2px;
+      padding: 4px 8px;
+      border: none;
+      background: #1976d2;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .control button:hover { background: #125a9c; }
 
-  let radarLayers = [];
-  let currentFrame = 0;
-  let playInterval;
-  let frames = [];
-  const tsElement = document.getElementById("timestamp");
-  const slider = document.getElementById("frameSlider");
+    .timestamp {
+      position: absolute;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: monospace;
+      z-index: 1000;
+    }
 
-  function formatTime(utc) {
-    const date = new Date(utc * 1000);
-    date.setHours(date.getUTCHours() + 7); // WIB
-    return date.toLocaleString("id-ID", {
-      day: "2-digit", month: "short", year: "numeric",
-      hour: "2-digit", minute: "2-digit"
-    });
-  }
+    .slider-container {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      z-index: 1000;
+      text-align: center;
+    }
+    .slider-container input { width: 100%; }
 
-  function showFrame(i) {
-    radarLayers.forEach((layer, idx) => {
-      layer.setOpacity(idx === i ? 0.7 : 0);
-    });
-    tsElement.innerText = formatTime(frames[i].time) + (frames[i].forecast ? " (Forecast)" : "");
-    slider.value = i;
-  }
+    /* Legend styling */
+    .legend {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: white;
+      padding: 8px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      font-size: 12px;
+      line-height: 1.4;
+      z-index: 1000;
+    }
+    .legend div {
+      display: flex;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+    .legend span {
+      display: inline-block;
+      width: 18px;
+      height: 12px;
+      margin-right: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
 
-  // Ambil data radar dari RainViewer
-  fetch("https://api.rainviewer.com/public/weather-maps.json")
-    .then(res => res.json())
-    .then(data => {
-      const host = data.host;
+  <div class="control">
+    <button id="prev">⏪ Prev</button>
+    <button id="play">▶ Play</button>
+    <button id="stop">⏹ Stop</button>
+    <button id="next">⏩ Next</button>
+  </div>
 
-      frames = [...data.radar.past, ...data.radar.nowcast];
-      slider.max = frames.length - 1;
+  <div class="timestamp" id="timestamp">Loading...</div>
 
-      frames.forEach(frame => {
-        const url = `${host}${frame.path}/256/{z}/{x}/{y}/2/1_1.png`;
-        const layer = L.tileLayer(url, { opacity: 0, attribution: "RainViewer.com" });
-        radarLayers.push(layer);
-        layer.addTo(map);
+  <div class="slider-container">
+    <input type="range" id="frameSlider" min="0" value="0" step="1">
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <strong>Intensitas Hujan</strong>
+    <div><span style="background:#00bfff"></span> Ringan</div>
+    <div><span style="background:#00ff00"></span> Sedang</div>
+    <div><span style="background:#ffff00"></span> Lebat</div>
+    <div><span style="background:#ff8000"></span> Sangat Lebat</div>
+    <div><span style="background:#ff0000"></span> Ekstrem</div>
+    <div><span style="background:#a000a0"></span> Sangat Ekstrem</div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([-7.685, 109.903], 6); // Jawa Tengah
+
+    // Basemap
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles © Esri'
+    }).addTo(map);
+
+    let radarLayers = [];
+    let currentFrame = 0;
+    let playInterval;
+    let frames = [];
+
+    const tsElement = document.getElementById("timestamp");
+    const slider = document.getElementById("frameSlider");
+
+    function formatTime(utc) {
+      const date = new Date(utc * 1000);
+      date.setHours(date.getUTCHours() + 7); // WIB
+      return date.toLocaleString("id-ID", {
+        day: "2-digit", month: "short", year: "numeric",
+        hour: "2-digit", minute: "2-digit"
       });
+    }
 
-      showFrame(currentFrame);
+    function showFrame(i) {
+      radarLayers.forEach((layer, idx) => {
+        layer.setOpacity(idx === i ? 0.7 : 0);
+      });
+      tsElement.innerText =
+        formatTime(frames[i].time) + (frames[i].forecast ? " (Forecast)" : "");
+      slider.value = i;
+    }
 
-      document.getElementById("play").addEventListener("click", () => {
-        clearInterval(playInterval);
-        playInterval = setInterval(() => {
+    // Load RainViewer data
+    fetch("https://api.rainviewer.com/public/weather-maps.json")
+      .then(res => res.json())
+      .then(data => {
+        const host = data.host;
+        frames = [...data.radar.past, ...data.radar.nowcast];
+        slider.max = frames.length - 1;
+
+        frames.forEach(frame => {
+          const url = `${host}${frame.path}/256/{z}/{x}/{y}/2/1_1.png`;
+          const layer = L.tileLayer(url, { opacity: 0, attribution: "RainViewer.com" });
+          radarLayers.push(layer);
+          layer.addTo(map);
+        });
+
+        showFrame(currentFrame);
+
+        document.getElementById("play").addEventListener("click", () => {
+          clearInterval(playInterval);
+          playInterval = setInterval(() => {
+            currentFrame = (currentFrame + 1) % radarLayers.length;
+            showFrame(currentFrame);
+          }, 800);
+        });
+
+        document.getElementById("stop").addEventListener("click", () => {
+          clearInterval(playInterval);
+        });
+
+        document.getElementById("next").addEventListener("click", () => {
+          clearInterval(playInterval);
           currentFrame = (currentFrame + 1) % radarLayers.length;
           showFrame(currentFrame);
-        }, 800);
+        });
+
+        document.getElementById("prev").addEventListener("click", () => {
+          clearInterval(playInterval);
+          currentFrame = (currentFrame - 1 + radarLayers.length) % radarLayers.length;
+          showFrame(currentFrame);
+        });
+
+        slider.addEventListener("input", (e) => {
+          clearInterval(playInterval);
+          currentFrame = parseInt(e.target.value);
+          showFrame(currentFrame);
+        });
       });
 
-      document.getElementById("stop").addEventListener("click", () => clearInterval(playInterval));
+    // ===========================================================
+    // Tambahkan batas_wilayah.geojson
+    fetch("batas_wilayah.geojson")
+      .then(res => res.json())
+      .then(data => {
+        const geojsonLayer = L.geoJSON(data, {
+          style: {
+            color: "#00ff00",
+            weight: 1,
+            fillOpacity: 0
+          },
+          onEachFeature: (feature, layer) => {
+            const nama = feature.properties.NAMOBJ || feature.properties.NAME || "Tanpa Nama";
 
-      document.getElementById("next").addEventListener("click", () => {
-        clearInterval(playInterval);
-        currentFrame = (currentFrame + 1) % radarLayers.length;
-        showFrame(currentFrame);
+            // Tooltip
+            layer.bindTooltip(nama, { permanent: false, direction: "center" });
+
+            // Hover highlight
+            layer.on({
+              mouseover: (e) => {
+                e.target.setStyle({ color: "red", weight: 2, fillOpacity: 0.2 });
+              },
+              mouseout: (e) => {
+                geojsonLayer.resetStyle(e.target);
+              }
+            });
+          }
+        }).addTo(map);
+
+        // Zoom to extent
+        map.fitBounds(geojsonLayer.getBounds());
+      })
+      .catch(err => {
+        console.error("Gagal load GeoJSON:", err);
       });
-
-      document.getElementById("prev").addEventListener("click", () => {
-        clearInterval(playInterval);
-        currentFrame = (currentFrame - 1 + radarLayers.length) % radarLayers.length;
-        showFrame(currentFrame);
-      });
-
-      slider.addEventListener("input", (e) => {
-        clearInterval(playInterval);
-        currentFrame = parseInt(e.target.value);
-        showFrame(currentFrame);
-      });
-    });
-
-  // Tambahkan batas wilayah dari file GeoJSON
-  fetch("batas_wilayah.geojson")
-    .then(res => res.json())
-    .then(geojsonData => {
-      L.geoJSON(geojsonData, {
-        style: {
-          color: "yellow",
-          weight: 2,
-          fillOpacity: 0
-        }
-      }).addTo(map);
-    })
-    .catch(err => console.error("Gagal memuat batas wilayah:", err));
-</script>
+  </script>
+</body>
+</html>
