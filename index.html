@@ -54,30 +54,44 @@
     .slider-container input { width: 100%; }
 
     /* Legend styling */
-    .legend {
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      background: white;
-      padding: 8px;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      font-size: 12px;
-      line-height: 1.4;
-      z-index: 1000;
-    }
-    .legend div {
+     .legend {
+      position:fixed;
+      background: #fff;
+      padding: 6px;
+      font-size:1vw;
+      text-align: center;
+      width: 95%; 
+      max-width: 800px;
+      left: 50%;
+      transform: translateX(-50%); /* geser ke kiri separuh lebarnya supaya benar2 center */
+      }
+
+    .legend-bar {
       display: grid;
-      grid-template-columns: repeat(6,1fr);
-      align-items: center;
-      margin-bottom: 2px;
-    }
-    .legend span {
-      display: inline-block;
-      width: 18px;
-      height: 12px;
-      margin-right: 6px;
-    }
+      grid-template-columns: repeat(8,1fr); /* jumlah kategori */
+      height: 1vw;
+      border: 1px solid #999;
+      }
+
+    .legend-bar div {
+      height: 100%;
+      }
+
+    .legend-angka {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      margin-top: 2px;
+      }
+    .legend-labels {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr); /* jumlah kategori */
+      font-size: 10px;
+      height:15px;
+      }
+    .legend-labels span {
+      border: 1px solid #999;  /* garis tiap kotak */
+      }
   </style>
 </head>
 <body>
@@ -97,7 +111,7 @@
   </div>
 
   <!-- Legend -->
-  <div class="legend">
+ <!-- <div class="legend">
     <strong>Intensitas Hujan</strong>
     <div><span style="background:#00bfff"></span> Ringan</div>
     <div><span style="background:#00ff00"></span> Sedang</div>
@@ -105,7 +119,31 @@
     <div><span style="background:#ff8000"></span> Sangat Lebat</div>
     <div><span style="background:#ff0000"></span> Ekstrem</div>
     <div><span style="background:#a000a0"></span> Sangat Ekstrem</div>
-  </div>
+  </div> -->
+  <div class="legend-angka">
+      <span>5</span>
+      <span>20</span>
+      <span>35</span>
+      <span>45</span>
+      <span>55</span>
+      <span>65</span>
+    </div>
+    <div class="legend-bar">
+      <div style="background:#00bfff"></div> <!-- Hujan ringan -->
+      <div style="background:#00ff00"></div> <!-- Hujan Sedang -->
+      <div style="background:#ffff00"></div> <!-- Hujan Lebat -->
+      <div style="background:#ff8000"></div> <!-- Hujan Sangat Lebat -->
+      <div style="background:#ff0000"></div> <!-- Hujan Ekstrem -->
+      <div style="background:#a000a0"></div> <!-- Hujan Sangat Ekstrem -->
+    </div>
+    <div class="legend-labels">
+      <span>Hujan Ringan</span>
+      <span>Hujan Sedang</span>
+      <span>Hujan Lebat</span>
+      <span>Hujan Sangat Lebat</span>
+      <span>Hujan Ekstrem</span>
+      <span>Hujan Sangat Ekstrem</span>
+    </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
