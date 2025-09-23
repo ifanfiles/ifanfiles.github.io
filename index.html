@@ -121,30 +121,6 @@
     <div><span style="background:#a000a0"></span> Sangat Ekstrem</div>
   </div> -->
   <div id="legend" class="legend" style="position: absolute; right: 10px; bottom: 10px; z-index:1000;"></div>
-  <div class="legend-angka">
-      <span>5</span>
-      <span>20</span>
-      <span>35</span>
-      <span>45</span>
-      <span>55</span>
-      <span>65</span>
-    </div>
-    <div class="legend-bar">
-      <div style="background:#00bfff"></div> <!-- Hujan ringan -->
-      <div style="background:#00ff00"></div> <!-- Hujan Sedang -->
-      <div style="background:#ffff00"></div> <!-- Hujan Lebat -->
-      <div style="background:#ff8000"></div> <!-- Hujan Sangat Lebat -->
-      <div style="background:#ff0000"></div> <!-- Hujan Ekstrem -->
-      <div style="background:#a000a0"></div> <!-- Hujan Sangat Ekstrem -->
-    </div>
-    <div class="legend-labels">
-      <span>Hujan Ringan</span>
-      <span>Hujan Sedang</span>
-      <span>Hujan Lebat</span>
-      <span>Hujan Sangat Lebat</span>
-      <span>Hujan Ekstrem</span>
-      <span>Hujan Sangat Ekstrem</span>
-    </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
@@ -267,6 +243,37 @@
       .catch(err => {
         console.error("Gagal load GeoJSON:", err);
       });
+    
+    function drawLegend(){
+  const legendDiv = document.getElementById('legend');
+  legendDiv.innerHTML = `
+    <strong>Legenda Hujan (Reflektivitas dBZ)</strong><br/>
+     <div class="legend-angka">
+      <span>5</span>
+      <span>20</span>
+      <span>35</span>
+      <span>45</span>
+      <span>55</span>
+      <span>65</span>
+    </div>
+    <div class="legend-bar">
+      <div style="background:#00bfff"></div> <!-- Hujan ringan -->
+      <div style="background:#00ff00"></div> <!-- Hujan Sedang -->
+      <div style="background:#ffff00"></div> <!-- Hujan Lebat -->
+      <div style="background:#ff8000"></div> <!-- Hujan Sangat Lebat -->
+      <div style="background:#ff0000"></div> <!-- Hujan Ekstrem -->
+      <div style="background:#a000a0"></div> <!-- Hujan Sangat Ekstrem -->
+    </div>
+    <div class="legend-labels">
+      <span>Hujan Ringan</span>
+      <span>Hujan Sedang</span>
+      <span>Hujan Lebat</span>
+      <span>Hujan Sangat Lebat</span>
+      <span>Hujan Ekstrem</span>
+      <span>Hujan Sangat Ekstrem</span>
+    </div>
+  `;
+}
   </script>
 </body>
 </html>
