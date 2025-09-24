@@ -54,14 +54,15 @@
     .slider-container input { width: 100%; }
 
     /* Legend styling */
-    .legend-bar {
+.legend-bar {
   margin-top: 8px;
   width: 100%;
   text-align: center;
+  position: relative;
 }
 
 .legend-bar .colorbar {
-  height: 16px;
+  height: 20px;
   border: 1px solid #999;
   border-radius: 4px;
   background: linear-gradient(to right,
@@ -72,15 +73,18 @@
     #ff0000,   /* merah ekstrem */
     #a000a0    /* ungu sangat ekstrem */
   );
+  position: relative;
 }
 
-.legend-bar .labels {
-  display: flex;
-  justify-content: space-between;
+.legend-bar .colorbar span {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
   font-size: 11px;
-  margin-top: 4px;
-  color: #000;
+  font-weight: bold;
+  color: black; /* bisa diganti white kalau kontras kurang */
 }
+
  
   </style>
 </head>
@@ -100,15 +104,14 @@
     <input type="range" id="frameSlider" min="0" value="0" step="1">
   <!-- Legend continuous bar -->
   <div class="legend-bar">
-    <div class="colorbar"></div>
-    <div class="labels">
-      <span>Ringan</span>
-      <span>Sedang</span>
-      <span>Lebat</span>
-      <span>Sangat Lebat</span>
-      <span>Ekstrem</span>
-    </div>
+  <div class="colorbar">
+    <span style="left:0%">Ringan</span>
+    <span style="left:25%">Sedang</span>
+    <span style="left:50%">Lebat</span>
+    <span style="left:75%">Sangat Lebat</span>
+    <span style="left:100%">Ekstrem</span>
   </div>
+</div>
 </div>
 
   <!-- Legend -->
