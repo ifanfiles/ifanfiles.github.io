@@ -82,8 +82,13 @@
   transform: translate(-50%, -50%);
   font-size: 11px;
   font-weight: bold;
-  color: black; /* bisa diganti white kalau kontras kurang */
+  color: white;
+  white-space: nowrap;
 }
+
+/* amankan ujung kiri & kanan */
+.legend-bar .colorbar span:first-child { transform: translate(0, -50%); left: 0%; }
+.legend-bar .colorbar span:last-child { transform: translate(-100%, -50%); left: 100%; }
 
  
   </style>
